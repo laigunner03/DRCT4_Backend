@@ -29,14 +29,3 @@ app.use("/file", fileRouter);
 app.get("/", (req, res) => {
   res.send("Hikers API");
 });
-
-const port = 3001;
-app.listen(port, () => {
-  console.log(`
-  ✨✨-----------------------------------✨✨
-  ✨                                       ✨
-  | Server started at http://localhost:${port} |
-  ✨                                       ✨
-  ✨✨------------------------------ ----✨✨
-  `);
-});
