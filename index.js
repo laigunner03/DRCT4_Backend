@@ -31,11 +31,12 @@ app.get("/", (req, res) => {
 });
 
 const port = process.env.PORT || 3001;
+const ip = process.env.ip;
 app.listen(port, () => {
   console.log(`
   ✨✨-----------------------------------✨✨
   ✨                                       ✨
-  | Server started at http://localhost:${port} |
+  | Server started at http://${ip}:${port} |
   ✨                                       ✨
   ✨✨------------------------------ ----✨✨
   `);
