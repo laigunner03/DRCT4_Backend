@@ -40,7 +40,7 @@ const registerUser = async (req, res) => {
     });
   }
 
-  return res.status(200).send({ message: "Welcome Hikers" });
+  return res.status(200).send({ message: "Registration Successful" });
 };
 
 const loginUser = async (req, res) => {
