@@ -1,5 +1,5 @@
 const bcrypt = require("bcrypt");
-const db = require("../database");
+const db = require("../database/index");
 const { createToken, validateToken } = require("../utils/jwt");
 const { createWallet, getUserById } = require("./shared.service");
 
@@ -161,5 +161,5 @@ module.exports = {
   loginUser,
   getUserProfile,
   updateUser,
-  updatePassword
+  updatePassword,
 };
