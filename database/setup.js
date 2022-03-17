@@ -19,15 +19,14 @@ const setupUserTable = async () => {
     CREATE TABLE IF NOT EXISTS hikers.users
     (
         loginid TEXT NOT NULL DEFAULT (('HKR'::text || to_char((CURRENT_DATE)::timestamp with time zone, 'YYYYMMDD'::text)) || lpad((nextval('user_id_seq'::regclass))::text, 18, '0'::text)),
-        username TEXT NOT NULL,
-        full_name TEXT NOT NULL,
+        username VARCHAR(16) NOT NULL,
+        full_name VARCHAR(50) NOT NULL,
         email TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL,
         phone TEXT,
         date_joined TIMESTAMPTZ,
-        user_img TEXT,
         PRIMARY KEY (loginid),
-        CONSTRAINT "UQ_4c8f96ccf523e9a3faefd5bdd4c" UNIQUE (email)
+        UNIQUE (email)
     );
   `);
 
@@ -39,12 +38,12 @@ const setupWalletTable = async () => {
     CREATE TABLE IF NOT EXISTS hikers.wallet
     (
         wallet_id uuid NOT NULL DEFAULT uuid_generate_v4(),
-        currency character varying COLLATE pg_catalog."default" NOT NULL,
+        currency TEXT NOT NULL,
         balance DOUBLE PRECISION NOT NULL DEFAULT '0'::numeric,
         "loginid" TEXT,
-        CONSTRAINT "pk_wallet" PRIMARY KEY (wallet_id),
-        CONSTRAINT "fk_wallet" FOREIGN KEY ("loginid")
-            REFERENCES hikers.users (loginid) MATCH SIMPLE
+        PRIMARY KEY (wallet_id),
+        FOREIGN KEY ("loginid")
+            REFERENCES hikers.users (loginid) 
             ON UPDATE NO ACTION
             ON DELETE NO ACTION
     );
@@ -58,16 +57,16 @@ const setupTransactionTable = async () => {
   CREATE TABLE IF NOT EXISTS hikers.transaction
   (
       id uuid NOT NULL DEFAULT uuid_generate_v4(),
-      currency character varying COLLATE pg_catalog."default" NOT NULL,
-      type character varying COLLATE pg_catalog."default" NOT NULL,
+      currency TEXT NOT NULL,
+      transaction_type TEXT NOT NULL,
       current_price DOUBLE PRECISION NOT NULL DEFAULT '0'::numeric,
       quantity DOUBLE PRECISION NOT NULL DEFAULT '0'::numeric,
-      "time" timestamp without time zone NOT NULL,
-      status character varying COLLATE pg_catalog."default" NOT NULL,
+      transaction_time TIMESTAMPTZ NOT NULL,
+      status TEXT NOT NULL,
       "wallet_id" uuid,
-      CONSTRAINT "pk_transaction" PRIMARY KEY (id),
-      CONSTRAINT "fk_transaction" FOREIGN KEY ("wallet_id")
-          REFERENCES hikers.wallet (wallet_id) MATCH SIMPLE
+      PRIMARY KEY (id),
+      FOREIGN KEY ("wallet_id")
+          REFERENCES hikers.wallet (wallet_id) 
           ON UPDATE NO ACTION
           ON DELETE NO ACTION
   )`);

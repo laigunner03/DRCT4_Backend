@@ -6,13 +6,20 @@ const {
   updateUser,
   updatePassword,
 } = require("../service/user.service");
+const { validateToken } = require("../utils/jwt");
 
 const userRouter = Router();
 userRouter.route("/").get((req, res) => res.send("User endpoint"));
 userRouter.route("/register").post(registerUser);
 userRouter.route("/login").post(loginUser);
-userRouter.route("/update-password/:loginid").post(updatePassword);
-userRouter.route("/profile/:loginid").get(getUserProfile);
-userRouter.route("/profile/:loginid").post(updateUser);
+userRouter
+  .use(validateToken)
+  .route("/update-password/:loginid")
+  .post(updatePassword);
+userRouter.use(validateToken).route("/profile/:loginid").post(getUserProfile);
+userRouter
+  .use(validateToken)
+  .route("/profile/update/:loginid")
+  .post(updateUser);
 
 module.exports = userRouter;

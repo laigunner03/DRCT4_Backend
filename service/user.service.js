@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const db = require("../database/index");
 const { createToken, validateToken } = require("../utils/jwt");
+const { jwt_expiry } = require("../utils/jwt_config");
 const { createWallet, getUserById } = require("./shared.service");
 
 const registerUser = async (req, res) => {
@@ -33,7 +34,7 @@ const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
     const login_query =
-      "SELECT loginid, username, full_name, email, password, phone, cast(date_joined::DATE as TEXT) as date_joined, user_img FROM hikers.users WHERE email = $1";
+      "SELECT loginid, username, full_name, email, password, phone, cast(date_joined::DATE as TEXT) as date_joined FROM hikers.users WHERE email = $1";
 
     const results = await db.query(login_query, [email]);
     if (!results.rowCount) {
@@ -53,8 +54,11 @@ const loginUser = async (req, res) => {
 
     //Store access-token in cookiie
     // res.cookie("access-token", access_token, {
-    //   maxAge: 86400 * 1000, //expired in 1 day (ms)
+    //   domain: "tradehikers.xyz",
+    //   maxAge: 300, //expired in 5min (s)
     //   httpOnly: true,
+    //   secure: true,
+    //   sameSite: "none",
     // });
 
     // Remove password from response.
@@ -84,8 +88,9 @@ const updateUser = async (req, res) => {
   try {
     const { loginid } = req.params;
     const { full_name, email, phone } = req.body;
+    console.log(req.body);
 
-    if (!full_name || !email || !phone) {
+    if (!full_name || !email) {
       throw "You have missing required fields.";
     }
 
@@ -114,7 +119,6 @@ const updateUser = async (req, res) => {
 const updatePassword = async (req, res) => {
   const { loginid } = req.params;
   const { old_password, new_password } = req.body;
-  console.log(old_password, new_password);
 
   const user_query = "SELECT * FROM hikers.users WHERE loginid = $1";
 
@@ -124,9 +128,7 @@ const updatePassword = async (req, res) => {
   try {
     const results = await db.query(user_query, [loginid]);
     if (!results.rowCount) {
-      return res
-        .status(400)
-        .send({ message: "Sorry, please check your input fields" });
+      throw "Sorry, please check your input fields";
     }
 
     const does_password_match = await bcrypt.compare(
@@ -134,7 +136,7 @@ const updatePassword = async (req, res) => {
       results.rows[0].password
     );
     if (!does_password_match) {
-      return res.status(400).send({ message: "Wrong password inserted!" });
+      throw "Wrong password inserted!";
     }
 
     const hashed_new_password = await bcrypt.hash(new_password, 10);
@@ -142,14 +144,15 @@ const updatePassword = async (req, res) => {
       hashed_new_password,
       loginid,
     ]);
-    console.log(update_pwd);
+
     if (!update_pwd.rowCount) {
-      return res
-        .status(400)
-        .send({ message: "Sorry, please check your input fields" });
+      throw "Sorry, please check your input fields";
     }
 
-    return res.status(200).send({ message: "Password change success" });
+    return res.status(200).send({
+      message:
+        "Password changed successfully. This will take effect on your next login.",
+    });
   } catch (e) {
     console.log(e);
     return res.send({ error: e });

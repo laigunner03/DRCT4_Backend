@@ -9,13 +9,17 @@ const { isValidCrypto } = require("../utils/validation");
 
 // for getting transaction history for calculating P/L
 const getUserTransactionById = async (req, res) => {
-  const { loginid } = req.params;
-  const get_profit_loss_query =
-    "SELECT t.currency, t.type, t.current_price, t.quantity, t.wallet_id, w.loginid from hikers.transaction as t LEFT JOIN hikers.wallet as w on t.wallet_id = w.wallet_id WHERE w.loginid = $1";
+  try {
+    const { loginid } = req.params;
+    const get_profit_loss_query =
+      "SELECT t.currency, t.transaction_type, t.current_price, t.quantity, CAST(t.transaction_time::DATE as TEXT),t.status, t.wallet_id, w.loginid from hikers.transaction as t LEFT JOIN hikers.wallet as w on t.wallet_id = w.wallet_id WHERE w.loginid = $1";
 
-  const result = await db.query(get_profit_loss_query, [loginid]);
+    const result = await db.query(get_profit_loss_query, [loginid]);
 
-  return res.status(200).send(result.rows);
+    return res.status(200).send(result.rows);
+  } catch (e) {
+    return res.send({ error: e });
+  }
 };
 
 const buyTransaction = async (req, res) => {
@@ -25,7 +29,11 @@ const buyTransaction = async (req, res) => {
       throw "You have missing required fields/parameters.";
     }
 
-    if (isValidCrypto(currency)) {
+    if (isNaN(quantity)) {
+      throw "Numbers only!";
+    }
+
+    if (!isValidCrypto(currency)) {
       throw "Invalid crypto currency.";
     }
 
@@ -63,7 +71,7 @@ const buyTransaction = async (req, res) => {
     ]);
 
     const transaction_query =
-      "INSERT INTO hikers.transaction (currency, type, current_price, quantity, time, status, wallet_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *";
+      "INSERT INTO hikers.transaction (currency, transaction_type, current_price, quantity, transaction_time, status, wallet_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *";
 
     const result = await db.query(transaction_query, [
       currency,
@@ -84,8 +92,13 @@ const buyTransaction = async (req, res) => {
 const sellTransaction = async (req, res) => {
   try {
     const { loginid, currency, quantity } = req.body;
+
     if (!loginid || !currency || !quantity) {
       throw "You have missing required fields/parameters.";
+    }
+
+    if (isNaN(quantity)) {
+      throw "Numbers only!";
     }
 
     if (!isValidCrypto(currency)) {
@@ -95,6 +108,10 @@ const sellTransaction = async (req, res) => {
     const wallets = await getWalletsByLoginId(loginid);
     const buy_wallet = wallets.find((w) => w.currency === "USD");
     const target_wallet = wallets.find((w) => w.currency === currency);
+
+    if (!target_wallet) {
+      throw "No Asset found";
+    }
 
     if (quantity > target_wallet.balance) {
       throw "Not enough quantity to sell";
@@ -124,7 +141,7 @@ const sellTransaction = async (req, res) => {
     ]);
 
     const transaction_query =
-      "INSERT INTO hikers.transaction (currency, type, current_price, quantity, time, status, wallet_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *";
+      "INSERT INTO hikers.transaction (currency, transaction_type, current_price, quantity, transaction_time, status, wallet_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *";
 
     const result = await db.query(transaction_query, [
       currency,
